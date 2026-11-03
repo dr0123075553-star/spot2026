@@ -1,0 +1,26 @@
+// Goon International College: receives applications from the Spot 2026 site
+// and adds them as rows in this Google Sheet.
+// Setup: open the Google Sheet > Extensions > Apps Script, paste this file,
+// then Deploy > New deployment > Web app (Execute as: Me, Who has access: Anyone).
+// Send the web app URL so it can be added to the site.
+
+const HEADERS = ["Submitted at","Full name","Mobile / WhatsApp","Email","State","School","Qualification",
+  "SPM credits","Programme","Study mode","Intake","Parent or guardian name","Parent or guardian phone",
+  "Best time to call","Applicant consent","Parent consent","Status","Notes"];
+const KEYS = ["name","phone","email","state","school","qualification","credits","programme","mode","intake",
+  "parentName","parentPhone","callTime","consent","parentConsent"];
+
+function doPost(e) {
+  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheets()[0];
+  if (sheet.getLastRow() === 0) sheet.appendRow(HEADERS);
+  const p = e.parameter || {};
+  if (p.website) return ok_(); // honeypot field: bots fill it, people do not
+  if (!p.name || !p.phone || p.consent !== "yes") return ok_();
+  const clean = v => String(v || "").slice(0, 200).replace(/^[=+\-@]/, "'$&"); // stop formula injection
+  sheet.appendRow([new Date()].concat(KEYS.map(k => clean(p[k]))).concat(["New", ""]));
+  return ok_();
+}
+
+function ok_() {
+  return ContentService.createTextOutput("ok");
+}
